@@ -1,18 +1,25 @@
-FROM ubuntu:12.04
+FROM debian:jessie
 
 MAINTAINER Leonid Makarov <leonid.makarov@blinkreaction.com>
 
 # Set timezone and locale.
-RUN locale-gen en_US.UTF-8
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update -qq && apt-get install -y locales -qq && locale-gen en_US.UTF-8 en_us && dpkg-reconfigure locales && dpkg-reconfigure locales && locale-gen C.UTF-8 && /usr/sbin/update-locale LANG=C.UTF-8
+ENV LANG C.UTF-8
+ENV LANGUAGE C.UTF-8
+ENV LC_ALL C.UTF-8
 
 # Prevent services autoload (http://jpetazzo.github.io/2013/10/06/policy-rc-d-do-not-start-services-automatically/)
 RUN echo '#!/bin/sh\nexit 101' > /usr/sbin/policy-rc.d && chmod +x /usr/sbin/policy-rc.d
 
 # Adding https://launchpad.net/~ondrej/+archive/ubuntu/php5 PPA repo for php5.5
-RUN echo "deb http://ppa.launchpad.net/ondrej/php5/ubuntu precise main " >> /etc/apt/sources.list
+#RUN echo "deb http://ppa.launchpad.net/ondrej/php5/ubuntu precise main " >> /etc/apt/sources.list
+
+# Add Repo for debian jessie php
+
+RUN echo "deb http://packages.sury.org/php5-5.6/ jessie main" > /etc/apt/sources.list.d/php5-5.6.list
+
+RUN apt-get update
 
 RUN \
     # Update system
@@ -22,12 +29,13 @@ RUN \
     DEBIAN_FRONTEND=noninteractive \
     apt-get -y --force-yes install \
     php5-common php5-cli php-pear php5-mysql php5-imagick php5-mcrypt \
-    php5-curl php5-gd php5-sqlite php5-json php5-memcache php5-intl \
-    pv curl wget zip git mysql-client ruby1.9.1-full rlwrap build-essential \
+    php5-curl libgd3 php5-gd php5-sqlite php5-json php5-memcache php5-intl \
+    pv curl wget zip git mysql-client ruby2.1 rubygems ruby-dev rlwrap build-essential \
     supervisor && \
     # Cleanup
     DEBIAN_FRONTEND=noninteractive apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
 
 # Bundler
 RUN gem install bundler
